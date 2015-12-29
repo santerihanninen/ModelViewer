@@ -41,22 +41,21 @@
   // varying vec3 vTransformedNormal;
   // varying vec4 vPosition;
 
-  // uniform vec3 uMaterialAmbientColor;
-  // uniform vec3 uMaterialDiffuseColor;
-  // uniform vec3 uMaterialSpecularColor;
-  // uniform float uMaterialShininess;
-  // uniform vec3 uMaterialEmissiveColor;
+  // uniform vec4 uMaterialDiffuse;
+  // uniform vec3 uMaterialSpecular;
+  // uniform float uMaterialGlossiness;
 
   // uniform vec3 uAmbientLightingColor;
 
   // uniform vec3 uPointLightingLocation;
   // uniform vec3 uPointLightingDiffuseColor;
   // uniform vec3 uPointLightingSpecularColor;
+  // uniform vec3 uMaterialAmbient;
 
   // uniform sampler2D uSampler;
 
   void main() {
-    gl_FragColor = vec4(0.9, 0.9, 0.9, 1.0);
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   }
 </script>
 
@@ -72,7 +71,7 @@
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
-  var modelViewMatrixStack = [];
+  //var modelViewMatrixStack = [];
 
   function createGLContext(canvas) {
     var names = ["webgl", "experimental-webgl"];
@@ -149,14 +148,14 @@
 
     // shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
     // gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-
+    shaderProgram.materialDiffuseUniform = gl.getUniformLocation(shaderProgram, "uMaterialDiffuse")
     shaderProgram.modelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
     shaderProgram.projectionMatrixUniform = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
   }
 
   function loadModel() {
     var request = new XMLHttpRequest();
-    request.open("GET", "models/teapot.json");
+    request.open("GET", "models/Teapot.json");
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
             setupBuffers(JSON.parse(request.responseText));
@@ -180,7 +179,7 @@
   }
 
   function draw() {
-
+/*
     function pushModelViewMatrix() {
       var copyToPush = mat4.create(modelViewMatrix);
       modelViewMatrixStack.push(copyToPush);
@@ -192,7 +191,7 @@
       }
       modelViewMatrix = modelViewMatrixStack.pop();
     }
-
+*/
     function uploadModelViewMatrixToShader() {
       gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniform, false, modelViewMatrix);
     }
@@ -204,17 +203,17 @@
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    if (vertexPositionBuffer == null ||
+    if (vertexPositionBuffer == null || vertexIndexBuffer == null ) {
         // vertexNormalBuffer === null ||
         // vertexTextureCoordBuffer === null ||
-        vertexIndexBuffer == null) {
         return;
     }
     mat4.perspective(projectionMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
     mat4.identity(modelViewMatrix);
 
-    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -32]);
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -40]);
+    //mat4.rotate(modelViewMatrix, modelViewMatrix, -1.0,  [0, 1, 0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
@@ -224,7 +223,7 @@
     uploadModelViewMatrixToShader();
     uploadProjectionMatrixToShader();
 
-    gl.drawElements(gl.TRIANGLES, vertexPositionBuffer.numberOfItems, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, vertexIndexBuffer.numberOfItems, gl.UNSIGNED_SHORT, 0);
   }
 
   function tick() {
@@ -236,7 +235,7 @@
   function start() {
     canvas = document.getElementById("gl-canvas");
     // gl = createGLContext(canvas);
-    gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+     gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
     setupShaders();
     //setupBuffers();
     loadModel();
