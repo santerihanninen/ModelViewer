@@ -88,22 +88,22 @@
     gl.useProgram(shaderProgram);
 
     // vertex shader attributes
-    shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-    shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
-    gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+    shaderProgram.vertexPositionAttributeLoc = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttributeLoc);
+    shaderProgram.vertexNormalAttributeLoc = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+    gl.enableVertexAttribArray(shaderProgram.vertexNormalAttributeLoc);
 
     // vertex shader uniforms
-    shaderProgram.modelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
-    shaderProgram.projectionMatrixUniform = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
-    shaderProgram.normalMatrixUniform = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
+    shaderProgram.modelViewMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+    shaderProgram.projectionMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
+    shaderProgram.normalMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
 
     // fragment shader uniforms
-    shaderProgram.diffuseColorUniform = gl.getUniformLocation(shaderProgram, "uDiffuseColor");
-    shaderProgram.glossinessUniform = gl.getUniformLocation(shaderProgram, "uGlossiness");
-    shaderProgram.directionalLightIntensityUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
-    shaderProgram.directionalLightDirectionUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
-    shaderProgram.directionalLightSpecularColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
+    shaderProgram.diffuseColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuseColor");
+    shaderProgram.glossinessUniformLoc = gl.getUniformLocation(shaderProgram, "uGlossiness");
+    shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
+    shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
+    shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
 
   }
 
@@ -157,13 +157,13 @@
   }
 
   function uploadMatrixUniformsToShader() {
-    gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniform, false, modelViewMatrix);
+    gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniformLoc, false, modelViewMatrix);
 
-    gl.uniformMatrix4fv(shaderProgram.projectionMatrixUniform, false, projectionMatrix);
+    gl.uniformMatrix4fv(shaderProgram.projectionMatrixUniformLoc, false, projectionMatrix);
 
     var normalMatrix = mat3.create();
     mat3.normalFromMat4(normalMatrix, modelViewMatrix);
-    gl.uniformMatrix3fv(shaderProgram.normalMatrixUniform, false, normalMatrix);
+    gl.uniformMatrix3fv(shaderProgram.normalMatrixUniformLoc, false, normalMatrix);
   }
 
   function draw() {
@@ -186,18 +186,18 @@
     //mat4.rotate(modelViewMatrix, modelViewMatrix, -1.0,  [0, 1, 0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute,
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
                            vars.vertexPositionBufferItemSize, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormalBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
+    gl.vertexAttribPointer(shaderProgram.vertexNormalAttributeLoc,
                            vars.vertexNormalBufferItemSize, gl.FLOAT, false, 0, 0);
 
-    gl.uniform4f(shaderProgram.diffuseColorUniform, 1.0, 0.2, 0.2, 1.0);
-    gl.uniform1f(shaderProgram.glossinessUniform, 50);
-    gl.uniform3f(shaderProgram.directionalLightIntensityUniform, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightDirectionUniform, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniform, 0.8, 0.8, 0.8);
+    gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 1.0, 0.2, 0.2, 1.0);
+    gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
+    gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
 
