@@ -168,7 +168,7 @@
 
   function draw() {
 
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     if (vertexPositionBuffer == null ||
@@ -177,7 +177,8 @@
         vertexTextureCoordBuffer == null) {
         return;
     }
-    mat4.perspective(projectionMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    var aspect = canvas.clientWidth / canvas.clientHeight;
+    mat4.perspective(projectionMatrix, 45.0, aspect, 0.1, 100.0);
 
     mat4.identity(modelViewMatrix);
 
@@ -215,8 +216,6 @@
     canvas = document.getElementById("gl-canvas");
     // gl = createGLContext(canvas);
     gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
-    gl.viewportWidth = canvas.width;
-    gl.viewportHeight = canvas.height;
     setupShaders();
     loadModel();
 
