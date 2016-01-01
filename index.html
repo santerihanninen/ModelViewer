@@ -43,6 +43,14 @@
   }
 
   function loadShader(type, url) {
+    var shader;
+    if (type == "fs") {
+      shader = gl.createShader(gl.FRAGMENT_SHADER);
+    } else if (type == "vs") {
+      shader = gl.createShader(gl.VERTEX_SHADER);
+    } else {
+      return null;
+    }
 
     var getSourceSynch = function(url) {
       var req = new XMLHttpRequest();
@@ -52,15 +60,6 @@
       //return (req.status == 200) ? req.responseText : null;
       return (req.status === 0) ? req.responseText : null;
     };
-
-    var shader;
-    if (type == "fs") {
-      shader = gl.createShader(gl.FRAGMENT_SHADER);
-    } else if (type == "vs") {
-      shader = gl.createShader(gl.VERTEX_SHADER);
-    } else {
-      return null;
-    }
 
     gl.shaderSource(shader, getSourceSynch(url));
     gl.compileShader(shader);
@@ -91,9 +90,10 @@
     // vertex shader attributes
     shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-
     shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
     gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+
+    // vertex shader uniforms
     shaderProgram.modelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
     shaderProgram.projectionMatrixUniform = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
     shaderProgram.normalMatrixUniform = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
@@ -212,16 +212,39 @@
     //animate();
   }
 
-  function start() {
-    canvas = document.getElementById("gl-canvas");
-    // gl = createGLContext(canvas);
-    gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+  function handleContextLost(event) {
+    event.preventDefault();
+    cancelRequestAnimFrame(vars.requestId);
+  }
+
+  function handleContextRestored(event) {
+    init();
+    vars.requestId = requestAnimFrame(draw, canvas);
+  }
+
+  function init() {
     setupShaders("shader/vs.glsl", "shader/fs.glsl");
     loadModel("models/teapot.json");
-
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
-    gl.disable(gl.CULL_FACE);
+  }
+
+  function start() {
+    canvas = document.getElementById("gl-canvas");
+    canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
+
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+
+    // gl = createGLContext(canvas);
+    gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+    init();
+
+    // Uncomment the three lines of code below to be able to test lost context
+     window.addEventListener('mousedown', function() {
+      canvas.loseContext();
+     });
+
     tick();
   }
 
