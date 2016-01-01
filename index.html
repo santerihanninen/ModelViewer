@@ -107,9 +107,9 @@
 
   }
 
-  function loadModel() {
+  function loadModel(modelUrl) {
     var request = new XMLHttpRequest();
-    request.open("GET", "models/teapot.json");
+    request.open("GET", modelUrl);
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
             setupBuffers(JSON.parse(request.responseText));
@@ -217,7 +217,7 @@
     // gl = createGLContext(canvas);
     gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
     setupShaders("shader/vs.glsl", "shader/fs.glsl");
-    loadModel();
+    loadModel("models/teapot.json");
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
