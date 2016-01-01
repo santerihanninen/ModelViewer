@@ -8,89 +8,22 @@
 <script type="text/javascript" src="js/webgl-utils.js"></script>
 <script type="text/javascript" src="js/webgl-debug.js"></script>
 
-<script id="shader-vs" type="x-shader/x-vertex">
-  attribute vec3 aVertexPosition;
-  attribute vec3 aVertexNormal;
-  // attribute vec2 aTextureCoord;
-  // attribute vec4 aVertexColor;
-
-  uniform mat4 uModelViewMatrix;
-  uniform mat4 uProjectionMatrix;
-  uniform mat3 uNormalMatrix;
-
-  varying vec4 vPosition;
-  varying vec3 vTransformedNormal;
-  // varying vec2 vTextureCoord
-  // varying vec4 vColor;
-
-  void main() {
-    vPosition = uModelViewMatrix * vec4(aVertexPosition, 1.0);
-    vTransformedNormal = uNormalMatrix * aVertexNormal;
-    gl_Position = uProjectionMatrix * vPosition;
-
-    // vColor = aVertexColor;
-    // vTransformedNormal = uNMatrix * aVertexNormal;
-    // vTextureCoord = aTextureCoord;
-  }
-</script>
-
-<script id="shader-fs" type="x-shader/x-fragment">
-  precision mediump float;
-
-  // control
-  // uniform bool uUseLighting;
-  // uniform bool uUseDiffuseTexture;
-  // uniform bool uUseNormalMap;
-
-  // interpolated inputs from vertex shader
-  varying vec4 vPosition;
-  varying vec3 vTransformedNormal;
-  // varying vec2 vTextureCoord;
-  // varying vec4 vColor;
-
-  // material parameters
-  uniform vec4 uDiffuseColor;
-  // uniform vec3 uSpecularColor;
-  // uniform float uGlossinessColor;
-  // uniform mat3 uNormalToCamera;
-
-  // lighting information
-  // uniform vec3 uAmbientLighting;
-  // uniform int uNumberOfDirectionalLights;
-  // uniform int uNumberOfPointLights;
-  uniform vec3 uDirectionalLightIntensity;
-  uniform vec3 uDirectionalLightDirection;
-  // uniform vec3 uPointLightLocation;
-  // uniform vec3 uPointLightDiffuse;
-  // uniform vec3 uPointLightSpecular;
-  // uniform vec3 uMaterialAmbient;
-
-  // uniform sampler2D uSampler;
-
-  void main() {
-    vec3 n = normalize(vTransformedNormal);
-
-    vec3 diffuse = uDiffuseColor.rgb * max(vec3(0.0, 0.0, 0.0), dot(n, normalize(uDirectionalLightDirection)));
-    vec3 specular = vec3(0.0, 0.0, 0.0);
-
-    gl_FragColor = vec4(uDirectionalLightIntensity * (diffuse + specular), 1);
-    //gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-  }
-</script>
-
 <script type="text/javascript">
 
   var gl;
   var canvas;
   var shaderProgram;
+
+  var vars; //variables
+
   var vertexPositionBuffer;
   var vertexNormalBuffer;
-  // var vertexTextureCoordBuffer;
+  var vertexTextureCoordBuffer;
   var vertexIndexBuffer;
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
-  // var modelViewMatrixStack = [];
+  var modelViewMatrixStack = [];
 
   function createGLContext(canvas) {
     var names = ["webgl", "experimental-webgl"];
@@ -103,53 +36,46 @@
         break;
       }
     }
-    if (context) {
-      context.viewportWidth = canvas.width;
-      context.viewportHeight = canvas.height;
-    } else {
+    if (!context) {
       alert("Failed to create WebGL context!");
     }
     return context;
   }
 
-  function setupShaders() {
+  function loadShader(type, url) {
 
-    function loadShaderFromDOM(id) {
-      var shaderScript = document.getElementById(id);
+    var getSourceSynch = function(url) {
+      var req = new XMLHttpRequest();
+      req.open("GET", url, false);
+      req.send(null);
+      // req.status == 0 when testing locally, otherwise 200
+      //return (req.status == 200) ? req.responseText : null;
+      return (req.status === 0) ? req.responseText : null;
+    };
 
-      if (!shaderScript) {
-       return null;
-      }
-      var shaderSource = "";
-      var currentChild = shaderScript.firstChild;
-      while (currentChild) {
-        if (currentChild.nodeType == 3) { // 3 corresponds to TEXT_NODE
-           shaderSource += currentChild.textContent;
-        }
-        currentChild = currentChild.nextSibling;
-      }
-
-      var shader;
-      if (shaderScript.type == "x-shader/x-fragment") {
-        shader = gl.createShader(gl.FRAGMENT_SHADER);
-      } else if (shaderScript.type == "x-shader/x-vertex") {
-        shader = gl.createShader(gl.VERTEX_SHADER);
-      } else {
-        return null;
-      }
-
-      gl.shaderSource(shader, shaderSource);
-      gl.compileShader(shader);
-
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        alert(gl.getShaderInfoLog(shader));
-        return null;
-      }
-      return shader;
+    var shader;
+    if (type == "fs") {
+      shader = gl.createShader(gl.FRAGMENT_SHADER);
+    } else if (type == "vs") {
+      shader = gl.createShader(gl.VERTEX_SHADER);
+    } else {
+      return null;
     }
 
-    var vertexShader = loadShaderFromDOM("shader-vs");
-    var fragmentShader = loadShaderFromDOM("shader-fs");
+    gl.shaderSource(shader, getSourceSynch(url));
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      alert(gl.getShaderInfoLog(shader));
+      return null;
+    }
+    return shader;
+  }
+
+  function setupShaders() {
+
+    var fragmentShader = loadShader("fs", "shader/fs.glsl");
+    var vertexShader = loadShader("vs", "shader/vs.glsl");
 
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -174,13 +100,16 @@
 
     // fragment shader uniforms
     shaderProgram.diffuseColorUniform = gl.getUniformLocation(shaderProgram, "uDiffuseColor");
+    shaderProgram.glossinessUniform = gl.getUniformLocation(shaderProgram, "uGlossiness");
     shaderProgram.directionalLightIntensityUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
     shaderProgram.directionalLightDirectionUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
+    shaderProgram.directionalLightSpecularColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
+
   }
 
   function loadModel() {
     var request = new XMLHttpRequest();
-    request.open("GET", "models/Teapot.json");
+    request.open("GET", "models/teapot.json");
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
             setupBuffers(JSON.parse(request.responseText));
@@ -202,6 +131,12 @@
     vertexNormalBuffer.itemSize = 3;
     vertexNormalBuffer.numberOfItems = model.vertexNormals.length / 3;
 
+    vertexTextureCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexTextureCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(model.vertexTextureCoords), gl.STATIC_DRAW);
+    vertexTextureCoordBuffer.itemSize = 2;
+    vertexTextureCoordBuffer.numberOfItems = model.vertexTextureCoords.length / 2;
+
     vertexIndexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(model.indices), gl.STATIC_DRAW);
@@ -209,46 +144,44 @@
     vertexIndexBuffer.numberOfItems = model.indices.length;
   }
 
+  function pushModelViewMatrix() {
+    var copyToPush = mat4.create(modelViewMatrix);
+    modelViewMatrixStack.push(copyToPush);
+  }
+
+  function popModelViewMatrix() {
+    if (modelViewMatrixStack.length === 0) {
+      throw "Error popModelViewMatrix() - Stack was empty ";
+    }
+    modelViewMatrix = modelViewMatrixStack.pop();
+  }
+
+  function uploadMatrixUniformsToShader() {
+    gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniform, false, modelViewMatrix);
+
+    gl.uniformMatrix4fv(shaderProgram.projectionMatrixUniform, false, projectionMatrix);
+
+    var normalMatrix = mat3.create();
+    mat3.normalFromMat4(normalMatrix, modelViewMatrix);
+    gl.uniformMatrix3fv(shaderProgram.normalMatrixUniform, false, normalMatrix);
+  }
+
   function draw() {
-/*
-    function pushModelViewMatrix() {
-      var copyToPush = mat4.create(modelViewMatrix);
-      modelViewMatrixStack.push(copyToPush);
-    }
-
-    function popModelViewMatrix() {
-      if (modelViewMatrixStack.length === 0) {
-        throw "Error popModelViewMatrix() - Stack was empty ";
-      }
-      modelViewMatrix = modelViewMatrixStack.pop();
-    }
-*/
-
-    function uploadMatrixUniformsToShader() {
-      gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniform, false, modelViewMatrix);
-
-      gl.uniformMatrix4fv(shaderProgram.projectionMatrixUniform, false, projectionMatrix);
-
-      var normalMatrix = mat3.create();
-      mat3.normalFromMat4(normalMatrix, modelViewMatrix);
-      gl.uniformMatrix3fv(shaderProgram.normalMatrixUniform, false, normalMatrix);
-    }
-
-
 
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    if (vertexPositionBuffer == null || vertexIndexBuffer == null ) {
-        // vertexNormalBuffer === null ||
-        // vertexTextureCoordBuffer === null ||
+    if (vertexPositionBuffer == null ||
+        vertexIndexBuffer == null ||
+        vertexNormalBuffer == null ||
+        vertexTextureCoordBuffer == null) {
         return;
     }
     mat4.perspective(projectionMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
     mat4.identity(modelViewMatrix);
 
-    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -40]);
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -50.0]);
     //mat4.rotate(modelViewMatrix, modelViewMatrix, -1.0,  [0, 1, 0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
@@ -260,10 +193,10 @@
                            vertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
     gl.uniform4f(shaderProgram.diffuseColorUniform, 1.0, 0.2, 0.2, 1.0);
+    gl.uniform1f(shaderProgram.glossinessUniform, 50);
     gl.uniform3f(shaderProgram.directionalLightIntensityUniform, 1.0, 1.0, 1.0);
     gl.uniform3f(shaderProgram.directionalLightDirectionUniform, 1.0, 1.0, 1.0);
-
-
+    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniform, 0.8, 0.8, 0.8);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
 
@@ -281,9 +214,10 @@
   function start() {
     canvas = document.getElementById("gl-canvas");
     // gl = createGLContext(canvas);
-     gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+    gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+    gl.viewportWidth = canvas.width;
+    gl.viewportHeight = canvas.height;
     setupShaders();
-    //setupBuffers();
     loadModel();
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -297,7 +231,7 @@
 </head>
 
 <body onload="start();">
-  <canvas id="gl-canvas" width="500" height="500"></canvas>
+  <canvas id="gl-canvas" width="800" height="800"></canvas>
 </body>
 
 </html>
