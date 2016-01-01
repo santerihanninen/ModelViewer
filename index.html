@@ -14,7 +14,7 @@
   var canvas;
   var shaderProgram;
 
-  var vars = {}; //variables
+  var vars = {}; // variables
 
   var vertexPositionBuffer;
   var vertexNormalBuffer;
@@ -72,10 +72,10 @@
     return shader;
   }
 
-  function setupShaders() {
+  function setupShaders(vertexShaderUrl, fragmentShaderUrl) {
 
-    var fragmentShader = loadShader("fs", "shader/fs.glsl");
-    var vertexShader = loadShader("vs", "shader/vs.glsl");
+    var vertexShader = loadShader("vs", vertexShaderUrl);
+    var fragmentShader = loadShader("fs", fragmentShaderUrl);
 
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -216,7 +216,7 @@
     canvas = document.getElementById("gl-canvas");
     // gl = createGLContext(canvas);
     gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
-    setupShaders();
+    setupShaders("shader/vs.glsl", "shader/fs.glsl");
     loadModel();
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
