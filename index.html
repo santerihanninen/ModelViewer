@@ -4,9 +4,10 @@
 <title>model-viewer</title>
 <meta charset="utf-8">
 
-<script type="text/javascript" src="js/gl-matrix-min.js"></script>
 <script type="text/javascript" src="js/webgl-utils.js"></script>
 <script type="text/javascript" src="js/webgl-debug.js"></script>
+<script type="text/javascript" src="js/gl-matrix-min.js"></script>
+<script type="text/javascript" src="js/twgl.min.js"></script>
 
 <script type="text/javascript">
 
@@ -24,23 +25,6 @@
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
   var modelViewMatrixStack = [];
-
-  function createGLContext(canvas) {
-    var names = ["webgl", "experimental-webgl"];
-    var context = null;
-    for (var i=0; i < names.length; i++) {
-      try {
-        context = canvas.getContext(names[i]);
-      } catch(e) {}
-      if (context) {
-        break;
-      }
-    }
-    if (!context) {
-      alert("Failed to create WebGL context!");
-    }
-    return context;
-  }
 
   function loadShaderSourceFromUrl(url) {
     var source;
@@ -148,6 +132,10 @@
     vars.vertexIndexBufferNumberOfItems = model.indices.length;
   }
 
+  function degToRad(degrees) {
+    return degrees * Math.PI / 180;
+  }
+
   function pushModelViewMatrix() {
     var copyToPush = mat4.create(modelViewMatrix);
     modelViewMatrixStack.push(copyToPush);
@@ -235,19 +223,19 @@
 
   function start() {
     canvas = document.getElementById("gl-canvas");
-    canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
+    // canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
 
-    canvas.addEventListener("webglcontextlost", handleContextLost, false);
-    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+    // canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    // canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
 
-    // gl = createGLContext(canvas);
-    gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+    // gl = twgl.getWebGLContext(canvas);
+    gl = WebGLDebugUtils.makeDebugContext(twgl.getWebGLContext(canvas));
     init();
 
     // Uncomment the three lines of code below to be able to test lost context
-     window.addEventListener('mousedown', function() {
-      canvas.loseContext();
-     });
+    // window.addEventListener('mousedown', function() {
+    //  canvas.loseContext();
+    // });
 
     tick();
   }
