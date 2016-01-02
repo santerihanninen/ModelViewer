@@ -14,6 +14,7 @@
   // material parameters
   uniform vec4 uDiffuseColor;
   uniform float uGlossiness;
+  // uniform bool isPlane;
 
   // lighting information IN WHAT SPACE???
   // uniform vec3 uAmbientLighting;

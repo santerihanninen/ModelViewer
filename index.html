@@ -22,6 +22,9 @@
   var vertexTextureCoordBuffer;
   var vertexIndexBuffer;
 
+  var planeVertexPositionBuffer;
+  var planeVertexNormalBuffer;
+
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
   var modelViewMatrixStack = [];
@@ -95,9 +98,9 @@
 
   }
 
-  function loadModel(modelUrl) {
+  function loadModel(url) {
     var request = new XMLHttpRequest();
-    request.open("GET", modelUrl);
+    request.open("GET", url);
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
             setupBuffers(JSON.parse(request.responseText));
@@ -130,6 +133,64 @@
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(model.indices), gl.STATIC_DRAW);
     vars.vertexIndexBufferItemSize = 1;
     vars.vertexIndexBufferNumberOfItems = model.indices.length;
+
+
+    // setup the plane
+    var scale = 10.0; //multiplier
+    var plane = [
+       1.0, -1.0,  0.0, //v0
+       1.0,  1.0,  0.0, //v1
+      -1.0,  1.0,  0.0, //v2
+      -1.0,  1.0,  0.0, //v3
+      -1.0, -1.0,  0.0, //v4
+       1.0, -1.0,  0.0, //v5
+
+      -1.0,  1.0,  0.0, //v3
+      -1.2,  1.4,  0.0, //v4
+      -1.4,  1.0,  0.0, //v5
+
+       1.0, -1.0,  0.0, //v3
+       1.4, -1.8,  0.0, //v4
+       0.6, -1.8,  0.0,  //v5
+
+       -1.0, -1.0,  0.0, //v3
+       -0.9, -1.1,  0.0, //v4
+       -1.1, -1.1,  0.0  //v5
+    ];
+    for (i = 0; i < plane.length; i++) {
+      plane[i] *= scale;
+    }
+
+    var planeNormals = [
+      0.0,  0.0,  1.0, //v0
+      0.0,  0.0,  1.0, //v1
+      0.0,  0.0,  1.0, //v2
+      0.0,  0.0,  1.0, //v3
+      0.0,  0.0,  1.0, //v4
+      0.0,  0.0,  1.0,  //v5
+
+      0.0,  0.0,  1.0, //v3
+      0.0,  0.0,  1.0, //v4
+      0.0,  0.0,  1.0,  //v5
+      0.0,  0.0,  1.0, //v3
+      0.0,  0.0,  1.0, //v4
+      0.0,  0.0,  1.0,  //v5
+      0.0,  0.0,  1.0, //v3
+      0.0,  0.0,  1.0, //v4
+      0.0,  0.0,  1.0  //v5
+    ];
+
+    planeVertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, planeVertexPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(plane), gl.STATIC_DRAW);
+    vars.planeVertexPositionBufferItemSize = 3;
+    vars.planeVertexPositionBufferNumberOfItems = plane.length / 3;
+
+    planeVertexNormalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, planeVertexNormalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(planeNormals), gl.STATIC_DRAW);
+    vars.planeVertexNormalBufferItemSize = 3;
+    vars.planeVertexNormalBufferNumberOfItems = planeNormals.length / 3;
   }
 
   function degToRad(degrees) {
@@ -196,6 +257,26 @@
     uploadMatrixUniformsToShader();
 
     gl.drawElements(gl.TRIANGLES, vars.vertexIndexBufferNumberOfItems, gl.UNSIGNED_SHORT, 0);
+
+
+    // plane
+    gl.bindBuffer(gl.ARRAY_BUFFER, planeVertexPositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
+                           vars.planeVertexPositionBufferItemSize, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, planeVertexNormalBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexNormalAttributeLoc,
+                           vars.planeVertexNormalBufferItemSize, gl.FLOAT, false, 0, 0);
+
+    gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 1.0, 0.2, 0.2, 1.0);
+    gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
+    gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
+
+    uploadMatrixUniformsToShader();
+
+    gl.drawArrays(gl.TRIANGLES, 0, vars.planeVertexPositionBufferNumberOfItems);
   }
 
   function tick() {
