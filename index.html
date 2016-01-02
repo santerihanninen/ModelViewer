@@ -42,15 +42,8 @@
     return context;
   }
 
-  function loadShader(type, url) {
-    var shader;
-    if (type == "fs") {
-      shader = gl.createShader(gl.FRAGMENT_SHADER);
-    } else if (type == "vs") {
-      shader = gl.createShader(gl.VERTEX_SHADER);
-    } else {
-      return null;
-    }
+  function loadShaderSourceFromUrl(url) {
+    var source;
 
     var getSourceSynch = function(url) {
       var req = new XMLHttpRequest();
@@ -61,10 +54,18 @@
       return (req.status === 0) ? req.responseText : null;
     };
 
-    gl.shaderSource(shader, getSourceSynch(url));
+    source = getSourceSynch(url);
+    return source;
+  }
+
+  function createShaderFromSource(type, source) {
+    var shader = gl.createShader(type);
+
+    gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (!compiled) {
       alert(gl.getShaderInfoLog(shader));
       return null;
     }
@@ -73,8 +74,11 @@
 
   function setupShaders(vertexShaderUrl, fragmentShaderUrl) {
 
-    var vertexShader = loadShader("vs", vertexShaderUrl);
-    var fragmentShader = loadShader("fs", fragmentShaderUrl);
+    var vertexShaderSource = loadShaderSourceFromUrl(vertexShaderUrl);
+    var fragmentShaderSource = loadShaderSourceFromUrl(fragmentShaderUrl);
+
+    var vertexShader = createShaderFromSource(gl.VERTEX_SHADER, vertexShaderSource);
+    var fragmentShader = createShaderFromSource(gl.FRAGMENT_SHADER, fragmentShaderSource);
 
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -207,19 +211,19 @@
   }
 
   function tick() {
-    requestAnimFrame(tick);
+    requestAnimationFrame(tick);
     draw();
     //animate();
   }
 
   function handleContextLost(event) {
     event.preventDefault();
-    cancelRequestAnimFrame(vars.requestId);
+    cancelRequestAnimationFrame(vars.requestId);
   }
 
   function handleContextRestored(event) {
     init();
-    vars.requestId = requestAnimFrame(draw, canvas);
+    vars.requestId = requestAnimationFrame(draw, canvas);
   }
 
   function init() {
