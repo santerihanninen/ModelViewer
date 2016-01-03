@@ -242,18 +242,26 @@
 
     mat4.identity(modelViewMatrix);
 
-    var eye = [0, -10.0, 50.0];
-    var center = [0.0, 0.0, 0.0];
+    var eye = [0, -20.0, 12.0];
+    var center = [0.0, 0.0, 3.0];
     var up = [0.0, 0.0, 1.0];
 
     mat4.lookAt(modelViewMatrix, eye, center, up);
 
+    var d = vec3.fromValues(-1.0, 1.0, -1.0, 0.0);
+    vec3.transformMat4(d, d, modelViewMatrix);
+    console.log( d[0] + d[1] + d[2]);
+
     pushModelViewMatrix();
 
-    mat4.scale(modelViewMatrix,  modelViewMatrix, [8.0, 8.0, 8.0]);
+    var scale = 0.6;
 
-    // mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, 0.0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, modelRotation,  [0, 1, 0]);
+    mat4.scale(modelViewMatrix,  modelViewMatrix, [scale, scale, scale]);
+
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, 7.0]);
+
+    mat4.rotate(modelViewMatrix, modelViewMatrix, modelRotation,  [0.0, 0.0, 1.0]);
+    mat4.rotate(modelViewMatrix, modelViewMatrix, 3.14 / 2,  [1.0, 0.0, 0.0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
@@ -263,10 +271,12 @@
     gl.vertexAttribPointer(shaderProgram.vertexNormalAttributeLoc,
                            vars.vertexNormalBufferItemSize, gl.FLOAT, false, 0, 0);
 
+
+
     gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 1.0, 0.2, 0.2, 1.0);
     gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
     gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
@@ -292,7 +302,7 @@
     gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 0.2, 1.0, 0.2, 1.0);
     gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, -1.0, 1.0, -1.0);
     gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
 
     uploadMatrixUniformsToShader();
@@ -304,23 +314,16 @@
 
   function animate() {
 
-    currentTime = new Date().getTime();
-    //currentTime = Date.now();
+    currentTime = Date.now();
 
     if (startTime === undefined) {
-
       startTime = currentTime;
     }
-
     if (lastTime !== 0 && lastTime !== undefined) {
         var elapsed = currentTime - lastTime;
-
-        modelRotation += 0.005 * elapsed;
-
+        modelRotation += 0.0005 * elapsed;
     }
-
     lastTime = currentTime;
-
   }
 
   function tick() {
@@ -341,7 +344,7 @@
 
   function init() {
     setupShaders("shader/vs.glsl", "shader/fs.glsl");
-    loadModel("models/macbook.json");
+    loadModel("models/teapot.json");
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
   }
@@ -370,7 +373,7 @@
 </head>
 
 <body onload="start();">
-  <canvas id="gl-canvas" width="800" height="800"></canvas>
+  <canvas id="gl-canvas" width="1200" height="800"></canvas>
 </body>
 
 </html>
