@@ -66,7 +66,6 @@
 
     var vertexShader = createShaderFromSource(gl.VERTEX_SHADER, vertexShaderSource);
     var fragmentShader = createShaderFromSource(gl.FRAGMENT_SHADER, fragmentShaderSource);
-
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
     gl.attachShader(shaderProgram, fragmentShader);
@@ -172,9 +171,11 @@
       0.0,  0.0,  1.0, //v3
       0.0,  0.0,  1.0, //v4
       0.0,  0.0,  1.0,  //v5
+
       0.0,  0.0,  1.0, //v3
       0.0,  0.0,  1.0, //v4
       0.0,  0.0,  1.0,  //v5
+
       0.0,  0.0,  1.0, //v3
       0.0,  0.0,  1.0, //v4
       0.0,  0.0,  1.0  //v5
@@ -198,8 +199,8 @@
   }
 
   function pushModelViewMatrix() {
-    var copyToPush = mat4.create(modelViewMatrix);
-    modelViewMatrixStack.push(copyToPush);
+    var copy = mat4.clone(modelViewMatrix);
+    modelViewMatrixStack.push(copy);
   }
 
   function popModelViewMatrix() {
@@ -235,8 +236,18 @@
 
     mat4.identity(modelViewMatrix);
 
-    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -50.0]);
-    //mat4.rotate(modelViewMatrix, modelViewMatrix, -1.0,  [0, 1, 0]);
+    var eye = [0, -10.0, 50.0];
+    var center = [0.0, 0.0, 0.0];
+    var up = [0.0, 0.0, 1.0];
+
+    mat4.lookAt(modelViewMatrix, eye, center, up);
+
+    pushModelViewMatrix();
+
+    mat4.scale(modelViewMatrix,  modelViewMatrix, [8.0, 8.0, 8.0]);
+
+    // mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, 0.0]);
+    //mat4.rotate(modelViewMatrix, modelViewMatrix, Math.PI / 2,  [0, 1, 0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
@@ -258,7 +269,11 @@
 
     gl.drawElements(gl.TRIANGLES, vars.vertexIndexBufferNumberOfItems, gl.UNSIGNED_SHORT, 0);
 
+    popModelViewMatrix();
 
+    pushModelViewMatrix();
+
+    //mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.0]);
     // plane
     gl.bindBuffer(gl.ARRAY_BUFFER, planeVertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
@@ -268,7 +283,7 @@
     gl.vertexAttribPointer(shaderProgram.vertexNormalAttributeLoc,
                            vars.planeVertexNormalBufferItemSize, gl.FLOAT, false, 0, 0);
 
-    gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 1.0, 0.2, 0.2, 1.0);
+    gl.uniform4f(shaderProgram.diffuseColorUniformLoc, 0.2, 1.0, 0.2, 1.0);
     gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
     gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, 1.0, 1.0, 1.0);
@@ -277,6 +292,8 @@
     uploadMatrixUniformsToShader();
 
     gl.drawArrays(gl.TRIANGLES, 0, vars.planeVertexPositionBufferNumberOfItems);
+
+    popModelViewMatrix();
   }
 
   function tick() {
@@ -297,7 +314,7 @@
 
   function init() {
     setupShaders("shader/vs.glsl", "shader/fs.glsl");
-    loadModel("models/teapot.json");
+    loadModel("models/macbook.json");
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
   }
