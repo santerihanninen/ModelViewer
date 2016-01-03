@@ -22,12 +22,18 @@
   var vertexTextureCoordBuffer;
   var vertexIndexBuffer;
 
+  var modelRotation = 0.0;
+
   var planeVertexPositionBuffer;
   var planeVertexNormalBuffer;
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
   var modelViewMatrixStack = [];
+
+  var startTime;
+  var lastTime;
+  var currentTime;
 
   function loadShaderSourceFromUrl(url) {
     var source;
@@ -247,7 +253,7 @@
     mat4.scale(modelViewMatrix,  modelViewMatrix, [8.0, 8.0, 8.0]);
 
     // mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, 0.0]);
-    //mat4.rotate(modelViewMatrix, modelViewMatrix, Math.PI / 2,  [0, 1, 0]);
+    mat4.rotate(modelViewMatrix, modelViewMatrix, modelRotation,  [0, 1, 0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttributeLoc,
@@ -296,10 +302,31 @@
     popModelViewMatrix();
   }
 
+  function animate() {
+
+    currentTime = new Date().getTime();
+    //currentTime = Date.now();
+
+    if (startTime === undefined) {
+
+      startTime = currentTime;
+    }
+
+    if (lastTime !== 0 && lastTime !== undefined) {
+        var elapsed = currentTime - lastTime;
+
+        modelRotation += 0.005 * elapsed;
+
+    }
+
+    lastTime = currentTime;
+
+  }
+
   function tick() {
     requestAnimationFrame(tick);
     draw();
-    //animate();
+    animate();
   }
 
   function handleContextLost(event) {
