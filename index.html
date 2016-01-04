@@ -24,8 +24,8 @@
 
   var modelRotation = 0.0;
 
-  var planeVertexPositionBuffer;
-  var planeVertexNormalBuffer;
+  // var planeVertexPositionBuffer;
+  // var planeVertexNormalBuffer;
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
@@ -143,7 +143,7 @@
     vars.vertexIndexBufferItemSize = 1;
     vars.vertexIndexBufferNumberOfItems = model.indices.length;
 
-
+    /*
     // setup the plane
     var scale = 10.0;
     var plane = [
@@ -202,6 +202,7 @@
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(planeNormals), gl.STATIC_DRAW);
     vars.planeVertexNormalBufferItemSize = 3;
     vars.planeVertexNormalBufferNumberOfItems = planeNormals.length / 3;
+    */
   }
 
   function degToRad(degrees) {
@@ -296,7 +297,7 @@
     gl.drawElements(gl.TRIANGLES, vars.vertexIndexBufferNumberOfItems, gl.UNSIGNED_SHORT, 0);
 
     popModelViewMatrix();
-
+    /*
     pushModelViewMatrix();
 
     //mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, 0.0]);
@@ -321,6 +322,7 @@
     gl.drawArrays(gl.TRIANGLES, 0, vars.planeVertexPositionBufferNumberOfItems);
 
     popModelViewMatrix();
+    */
   }
 
   function animate() {
