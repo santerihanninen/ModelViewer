@@ -27,36 +27,36 @@
       buffers.indices = {};
       */
 
-  //this.vertices = unpacked.verts;
-  //this.vertexNormals = unpacked.norms;
-  //this.textures = unpacked.textures;
-  //this.indices = unpacked.indices;
-
   var positionBuffer;
   var normalBuffer;
   var textureCoordinatesBuffer;
   var indexBuffer;
 
-  var model = {};
-      model.translation = [0.0, 0.0, 0.07];
-      model.initialRotation = Math.PI / 2;
-      model.initialRotationAxis = [1.0, 0.0, 0.0];
-      model.currentRotation = 0.0;
-      model.currentRotationAxis = [0.0, 1.0, 0.0];
-      model.rotationSpeed = 0.0005;
-      model.scale = 1.0;
+  var model = {
+      translation: [0.0, 0.0, 0.07],
+      initialRotation: Math.PI / 2,
+      initialRotationAxis: [1.0, 0.0, 0.0],
+      currentRotation: 0.0,
+      currentRotationAxis: [0.0, 1.0, 0.0],
+      rotationSpeed: 0.0005,
+      scale: 1.0
+};
 
-      // model.diffuse = [0.8, 0.8, 0.8. 1.0];
-      // model.specular = [0.8, 0.8, 0.8. 1.0];
-      // model.glossiness = 50.0;
+  var material = {
+    diffuse: [0.8, 0.8, 0.8, 1.0],
+    specular: [0.8, 0.8, 0.8],
+    glossiness: 50.0,
+    color: [1.0, 0.0, 0.0, 1.0]
+  };
 
-  var camera = {};
-      camera.position = [0, -0.5, 0.0];
-      camera.aim = [0.0, 0.0, 0.0];
-      camera.up = [0.0, 0.0, 1.0];
-      camera.fov = 45.0;
-      camera.near = 0.1;
-      camera.far = 100.0;
+  var camera = {
+      position: [0, -0.5, 0.0],
+      aim: [0.0, 0.0, 0.0],
+      up: [0.0, 0.0, 1.0],
+      fov: 45.0,
+      near: 0.1,
+      far: 100.0
+  };
 
   var vertexShaderUrl = "shader/vs.glsl";
   var fragmentShaderUrl = "shader/fs.glsl";
@@ -74,6 +74,17 @@
   var startTime;
   var lastTime;
   var currentTime;
+
+  var requestId;
+
+  var fps = {
+    currentTime: undefined,
+    previousTime: Date.now(),
+    nbrOfFramesForFPS: 0,
+    //counter: undefined
+  };
+
+  var fpsCounter;
 
   function loadShaderSourceFromUrl(url) {
     var source;
@@ -223,7 +234,22 @@
     gl.uniformMatrix3fv(shaderProgram.normalMatrixUniformLoc, false, normalMatrix);
   }
 
+  function updateFPS(fps) {
+    fpsCounter.textContent=fps;
+  }
+
   function draw() {
+
+    fps.currentTime = Date.now();
+
+    // Update FPS if a second or more has passed since last FPS update
+    if(fps.currentTime - fps.previousTime >= 1000) {
+      // fps.counter.innerHTML = fps.nbrOfFramesForFPS;
+      updateFPS(fps.nbrOfFramesForFPS);
+      fps.nbrOfFramesForFPS = 0;
+      fps.previousTime = fps.currentTime;
+    }
+
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -266,11 +292,12 @@
     gl.vertexAttribPointer(shaderProgram.textureCoordinatesAttributeLoc,
                            vars.textureCoordinatesBufferItemSize, gl.FLOAT, false, 0, 0);
 
-    gl.vertexAttrib4f(shaderProgram.colorAttributeLoc, 1.0, 0.0, 0.0, 1.0);
+    gl.vertexAttrib4fv(shaderProgram.colorAttributeLoc, material.color);
 
-    gl.uniform4f(shaderProgram.diffuseUniformLoc, 1.0, 0.2, 0.2, 1.0);
-    gl.uniform3f(shaderProgram.specularUniformLoc, 1.0, 1.0, 1.0);
-    gl.uniform1f(shaderProgram.glossinessUniformLoc, 50);
+    //gl.uniform4f(shaderProgram.diffuseUniformLoc, 1.0, 0.2, 0.2, 1.0);
+    gl.uniform4fv(shaderProgram.diffuseUniformLoc, material.diffuse);
+    gl.uniform3fv(shaderProgram.specularUniformLoc, material.specular);
+    gl.uniform1f(shaderProgram.glossinessUniformLoc, material.glossiness);
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
     gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
     gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
@@ -282,6 +309,10 @@
     gl.drawElements(gl.TRIANGLES, vars.indexBufferNumberOfItems, gl.UNSIGNED_SHORT, 0);
 
     popModelViewMatrix();
+
+    // When a frame is completed, update the number of drawn
+    // frames to be able to calculate the FPS value
+    fps.nbrOfFramesForFPS++;
   }
 
   function animate() {
@@ -297,19 +328,19 @@
   }
 
   function tick() {
-    requestAnimationFrame(tick);
+    requestId = requestAnimationFrame(tick);
     draw();
     animate();
   }
 
   function handleContextLost(event) {
     event.preventDefault();
-    cancelRequestAnimationFrame(vars.requestId);
+    cancelRequestAnimationFrame(requestId);
   }
 
   function handleContextRestored(event) {
     init();
-    vars.requestId = requestAnimationFrame(draw, canvas);
+    requestId = requestAnimationFrame(draw, canvas);
   }
 
   function init() {
@@ -321,6 +352,8 @@
 
   function start() {
     canvas = document.getElementById("gl-canvas");
+    fpsCounter = document.getElementById("fps-counter");
+    console.log(fpsCounter);
     // canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
 
     // canvas.addEventListener("webglcontextlost", handleContextLost, false);
@@ -344,6 +377,8 @@
 
 <body onload="start();">
   <canvas id="gl-canvas" width="1200" height="800"></canvas>
+  <h2 id="fps-counter">--</h1>
+  <canvas id="sss" width="1200" height="800"></canvas>
 </body>
 
 </html>
