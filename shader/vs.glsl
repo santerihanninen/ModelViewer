@@ -11,15 +11,15 @@ varying vec4 vPosition;
 varying vec3 vTransformedNormal;
 varying vec2 vTextureCoordinates;
 varying vec4 vColor;
-varying mat4 vModelViewMatrix;
 
 void main() {
   vPosition = uModelViewMatrix * vec4(aPosition, 1.0);
-  gl_Position = uProjectionMatrix * vPosition;
 
   vTransformedNormal = normalize(uNormalMatrix * aNormal);
 
   vTextureCoordinates = aTextureCoordinates;
 
   vColor = aColor;
+
+  gl_Position = uProjectionMatrix * vPosition;
 }

@@ -30,7 +30,6 @@
   // uniform vec3 uPointLightSpecular;
 
   void main() {
-
     vec4 diffuseColor = uDiffuse * vColor;
 
     // normal vector
@@ -40,7 +39,7 @@
     vec3 v = -normalize(vPosition.xyz);
 
     // to-light vector
-    vec3 l = normalize(vec3(10.0, 3.0, 17.0));
+    vec3 l = normalize(vec3(10.0, 3.0, 17.0)); //FIXME takes the light location from a constant
 
     // half-angle vector
     vec3 h = normalize(l + v);
