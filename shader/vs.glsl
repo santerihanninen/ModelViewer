@@ -1,7 +1,7 @@
-attribute vec3 aVertexPosition;
-attribute vec3 aVertexNormal;
-// attribute vec2 aTextureCoord;
-attribute vec4 aVertexColor;
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+attribute vec2 aTextureCoordinates;
+attribute vec4 aColor;
 
 uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
@@ -9,18 +9,17 @@ uniform mat3 uNormalMatrix;
 
 varying vec4 vPosition;
 varying vec3 vTransformedNormal;
-// varying vec2 vTextureCoord
-// varying vec4 vColor;
+varying vec2 vTextureCoordinates;
+varying vec4 vColor;
 varying mat4 vModelViewMatrix;
 
 void main() {
-  vPosition = uModelViewMatrix * vec4(aVertexPosition, 1.0);
-  vTransformedNormal = uNormalMatrix * aVertexNormal;
+  vPosition = uModelViewMatrix * vec4(aPosition, 1.0);
   gl_Position = uProjectionMatrix * vPosition;
 
-  vModelViewMatrix = uModelViewMatrix;
+  vTransformedNormal = normalize(uNormalMatrix * aNormal);
 
-  // vColor = aVertexColor;
-  // vTransformedNormal = uNMatrix * aVertexNormal;
-  // vTextureCoord = aTextureCoord;
+  vTextureCoordinates = aTextureCoordinates;
+
+  vColor = aColor;
 }

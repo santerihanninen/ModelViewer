@@ -5,18 +5,20 @@
   // uniform bool uUseDiffuseTexture;
   // uniform bool uUseNormalMap;
 
-  // interpolated inputs from vertex shader
   varying vec4 vPosition;
   varying vec3 vTransformedNormal;
-  // varying vec2 vTextureCoord;
-  // varying vec4 vColor;
+  varying vec2 vTextureCoordinates;
+  varying vec4 vColor;
 
-  // material parameters
-  uniform vec4 uDiffuseColor;
+  uniform vec4 uDiffuse;
+  uniform vec3 uSpecular;
   uniform float uGlossiness;
-  // uniform bool isPlane;
 
-  // lighting information IN WHAT SPACE???
+  // uniform sampler2D uDiffuseSampler;
+  // uniform sampler2D uNormalSampler;
+
+  // uniform int uNumberOfLights;
+
   // uniform vec3 uAmbientLighting;
   // uniform int uNumberOfDirectionalLights;
   // uniform int uNumberOfPointLights;
@@ -26,25 +28,25 @@
   // uniform vec3 uPointLightLocation;
   // uniform vec3 uPointLightDiffuse;
   // uniform vec3 uPointLightSpecular;
-  // uniform vec3 uMaterialAmbient;
-
-  varying mat4 vModelViewMatrix;
-
-  // uniform sampler2D uSampler;
 
   void main() {
+
+    vec4 diffuseColor = uDiffuse * vColor;
+
     // normal vector
     vec3 n = normalize(vTransformedNormal);
+
     // to-viewer vector
-    vec3 v = vec3(0.0, 0.0, 0.0) - vPosition.rgb;
-    v = vec3(vModelViewMatrix[3][0], vModelViewMatrix[3][1], vModelViewMatrix[3][2]);
+    vec3 v = -normalize(vPosition.xyz);
+
+    // to-light vector
+    vec3 l = normalize(vec3(10.0, 3.0, 17.0));
+
     // half-angle vector
-    vec3 h = normalize(normalize(v) + normalize(-uDirectionalLightDirection));
+    vec3 h = normalize(l + v);
 
     //vec3 ambient = vec3(0.1, 0.1, 0.1);
-
-    vec3 diffuse = uDiffuseColor.rgb * max(0.0, dot(n, normalize(-uDirectionalLightDirection)));
-    // vec3 specular = dot(uSpecularColor, pow(max(0.0, dot(h, n)), uGlossiness));
+    vec3 diffuse = diffuseColor.rgb * max(dot(n, l), 0.0);
     vec3 specular = uDirectionalLightSpecularColor * pow(max(dot(h, n), 0.0), uGlossiness);
 
     gl_FragColor = vec4(uDirectionalLightIntensity * (diffuse + specular), 1);
