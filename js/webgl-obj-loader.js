@@ -209,6 +209,8 @@
     this.vertexNormals = unpacked.norms;
     this.textures = unpacked.textures;
     this.indices = unpacked.indices;
+
+    return this;
   }
 
   var Ajax = function(){
@@ -384,4 +386,3 @@
     gl.deleteBuffer(mesh.indexBuffer);
   }
 })(this);
-
