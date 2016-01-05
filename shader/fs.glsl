@@ -32,6 +32,8 @@
   // uniform vec3 uPointLightDiffuse;
   // uniform vec3 uPointLightSpecular;
 
+  uniform sampler2D uSampler;
+
   void main() {
     vec4 diffuseColor = uDiffuse * vColor;
 
@@ -51,5 +53,6 @@
     vec3 diffuse = diffuseColor.rgb * max(dot(n, l), 0.0);
     vec3 specular = uDirectionalLightSpecularColor * pow(max(dot(h, n), 0.0), uGlossiness);
 
-    gl_FragColor = vec4(uDirectionalLightIntensity * (diffuse + specular), 1);
+    // gl_FragColor = vec4(uDirectionalLightIntensity * (diffuse + specular), 1);
+    gl_FragColor = texture2D(uSampler, vec2(vTextureCoordinates.s, vTextureCoordinates.t));
   }

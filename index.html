@@ -34,6 +34,7 @@
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
+
   var modelViewMatrixStack = [];
 
   var startTime;
@@ -41,6 +42,8 @@
   var currentTime;
 
   var requestId;
+
+  var ongoingImageLoads = [];
 
   var fps = {
     currentTime: undefined,
@@ -54,9 +57,11 @@
   var vertexShaderUrl = "shader/vs.glsl";
   var fragmentShaderUrl = "shader/fs.glsl";
 
+  var headUrl = "head/head.obj";
+  var teapotUrl = "teapot.json";
   var modelFileName;
-  modelFileName = "teapot.json";
-  modelFileName = "head.obj";
+  modelFileName = teapotUrl;
+  modelFileName = headUrl;
 
   var modelUrl = "models/" + modelFileName;
 
@@ -77,8 +82,15 @@
     color:      [1.0, 0.0, 0.0, 1.0]
   };
 
+  var textures = {
+    diffuseUrl: "models/head/lambertian.png",
+    diffuse: undefined,
+    normalUrl: "models/head/normal.png",
+    normal: undefined
+  };
+
   var camera = {
-      position: [0, -0.5, 0.0],
+      position: [0, -0.3, 0.0],
       aim:      [0.0, 0.0, 0.0],
       up:       [0.0, 0.0, 1.0],
       fov:      45.0,
@@ -155,6 +167,8 @@
     shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
     shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
     shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
+    shaderProgram.samplerUniformLoc = gl.getUniformLocation(shaderProgram, "uSampler");
+
 
     // fragment shader control uniforms
     shaderProgram.useLightingUniformLoc = gl.getUniformLocation(shaderProgram, "uUseLighting");
@@ -187,6 +201,37 @@
         }
     };
     request.send();
+  }
+
+  function textureFinishedLoading(image, texture) {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
+  function loadImageForTexture(url, texture) {
+    var image = new Image();
+    image.onload = function() {
+      // ongoingImageLoads.splice(ongoingImageLoads.indexOf(image), 1);
+      textureFinishedLoading(image, texture);
+    }
+    //ongoingImageLoads.push(image);
+    image.src = url;
+  }
+
+  function setupTextures() {
+    if (modelFileName === headUrl) {
+      textures.diffuse = gl.createTexture();
+      loadImageForTexture(textures.diffuseUrl, textures.diffuse);
+      //var normal = gl.createTexture();
+      //loadImageForTexture(textures.normalUrl, normal);
+    }
   }
 
   function setupBuffers(model) {
@@ -315,6 +360,12 @@
     gl.uniform1i(shaderProgram.showWireFrameUniformLoc, control.useLighting);
     gl.uniform1i(shaderProgram.showGridUniformLoc, control.useLighting);
 
+    if (textures.diffuse !== undefined) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, textures.diffuse);
+      gl.uniform1i(shaderProgram.samplerUniformLoc, 0);
+    }
+
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
     uploadMatrixUniformsToShader();
@@ -349,6 +400,11 @@
   function handleContextLost(event) {
     event.preventDefault();
     cancelRequestAnimationFrame(requestId);
+
+    for (var i = 0; ongoingImageLoads.length; i++) {
+      ongoingImageLoads[i].onload = undefined;
+    }
+    ongoingImageLoads = [];
   }
 
   function handleContextRestored(event) {
@@ -358,6 +414,7 @@
 
   function init() {
     setupShaders(vertexShaderUrl, fragmentShaderUrl);
+    setupTextures();
     loadModel(modelUrl);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
@@ -366,7 +423,6 @@
   function start() {
     canvas = document.getElementById("gl-canvas");
     fpsCounter = document.getElementById("fps-counter");
-    console.log(fpsCounter);
     // canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
 
     // canvas.addEventListener("webglcontextlost", handleContextLost, false);
@@ -389,9 +445,8 @@
 </head>
 
 <body onload="start();">
-  <canvas id="gl-canvas" width="1200" height="800"></canvas>
+  <canvas id="gl-canvas" width="1600" height="1000"></canvas>
   <h2 id="fps-counter">--</h1>
-  <canvas id="sss" width="1200" height="800"></canvas>
 </body>
 
 </html>
