@@ -1,9 +1,12 @@
   precision mediump float;
 
   // control
-  // uniform bool uUseLighting;
-  // uniform bool uUseDiffuseTexture;
-  // uniform bool uUseNormalMap;
+
+  uniform bool uUseLighting;
+  uniform bool uUseDiffuseTexture;
+  uniform bool uUseNormalMap;
+  uniform bool uShowWireframe;
+  uniform bool uShowGrid;
 
   varying vec4 vPosition;
   varying vec3 vTransformedNormal;

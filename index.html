@@ -19,53 +19,18 @@
 
   var vars = {};
 
-  /*
-  var buffers = {};
-      buffers.position = {};
-      buffers.normal = {};
-      buffers.textureCoordinates = {};
-      buffers.indices = {};
-      */
-
   var positionBuffer;
   var normalBuffer;
   var textureCoordinatesBuffer;
   var indexBuffer;
 
-  var model = {
-      translation: [0.0, 0.0, 0.07],
-      initialRotation: Math.PI / 2,
-      initialRotationAxis: [1.0, 0.0, 0.0],
-      currentRotation: 0.0,
-      currentRotationAxis: [0.0, 1.0, 0.0],
-      rotationSpeed: 0.0005,
-      scale: 1.0
-};
-
-  var material = {
-    diffuse: [0.8, 0.8, 0.8, 1.0],
-    specular: [0.8, 0.8, 0.8],
-    glossiness: 50.0,
-    color: [1.0, 0.0, 0.0, 1.0]
+  var control = {
+    useLighting:       true,
+    useDiffuseTexture: true,
+    useNormalMap:      true,
+    showWireframe:     false,
+    showGrid:          false
   };
-
-  var camera = {
-      position: [0, -0.5, 0.0],
-      aim: [0.0, 0.0, 0.0],
-      up: [0.0, 0.0, 1.0],
-      fov: 45.0,
-      near: 0.1,
-      far: 100.0
-  };
-
-  var vertexShaderUrl = "shader/vs.glsl";
-  var fragmentShaderUrl = "shader/fs.glsl";
-
-  var modelFileName;
-  modelFileName = "teapot.json";
-  modelFileName = "head.obj";
-
-  var modelUrl = "models/" + modelFileName;
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
@@ -85,6 +50,41 @@
   };
 
   var fpsCounter;
+
+  var vertexShaderUrl = "shader/vs.glsl";
+  var fragmentShaderUrl = "shader/fs.glsl";
+
+  var modelFileName;
+  modelFileName = "teapot.json";
+  modelFileName = "head.obj";
+
+  var modelUrl = "models/" + modelFileName;
+
+  var model = {
+      translation:          [0.0, 0.0, 0.07],
+      initialRotation:      Math.PI / 2,
+      initialRotationAxis:  [1.0, 0.0, 0.0],
+      currentRotation:      0.0,
+      currentRotationAxis:  [0.0, 1.0, 0.0],
+      rotationSpeed:        0.0005,
+      scale:                1.0
+  };
+
+  var material = {
+    diffuse:    [0.8, 0.8, 0.8, 1.0],
+    specular:   [0.8, 0.8, 0.8],
+    glossiness: 50.0,
+    color:      [1.0, 0.0, 0.0, 1.0]
+  };
+
+  var camera = {
+      position: [0, -0.5, 0.0],
+      aim:      [0.0, 0.0, 0.0],
+      up:       [0.0, 0.0, 1.0],
+      fov:      45.0,
+      near:     0.1,
+      far:      100.0
+  };
 
   function loadShaderSourceFromUrl(url) {
     var source;
@@ -155,6 +155,13 @@
     shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
     shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
     shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
+
+    // fragment shader control uniforms
+    shaderProgram.useLightingUniformLoc = gl.getUniformLocation(shaderProgram, "uUseLighting");
+    shaderProgram.useDiffuseTextureUniformLoc = gl.getUniformLocation(shaderProgram, "uUseDiffuseTexture");
+    shaderProgram.useNormalMapUniformLoc = gl.getUniformLocation(shaderProgram, "uUseNormalMap");
+    shaderProgram.showWireFrameUniformLoc = gl.getUniformLocation(shaderProgram, "uShowWireframee");
+    shaderProgram.showGridUniformLoc = gl.getUniformLocation(shaderProgram, "uShowGrid");
   }
 
   function getFileExtensionFromUrl(url) {
@@ -301,6 +308,12 @@
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
     gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
     gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
+
+    gl.uniform1i(shaderProgram.useLightingUniformLoc, control.useLighting);
+    gl.uniform1i(shaderProgram.useDiffuseTextureUniformLoc, control.useLighting);
+    gl.uniform1i(shaderProgram.useNormalMapUniformLoc, control.useLighting);
+    gl.uniform1i(shaderProgram.showWireFrameUniformLoc, control.useLighting);
+    gl.uniform1i(shaderProgram.showGridUniformLoc, control.useLighting);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
