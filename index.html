@@ -28,13 +28,10 @@
     useLighting:       true,
     useDiffuseTexture: true,
     useNormalMap:      true,
-    showWireframe:     false,
-    showGrid:          false
   };
 
   var modelViewMatrix = mat4.create();
   var projectionMatrix = mat4.create();
-
   var modelViewMatrixStack = [];
 
   var startTime;
@@ -69,7 +66,7 @@
       translation:          [0.0, 0.0, 0.07],
       initialRotation:      Math.PI / 2,
       initialRotationAxis:  [1.0, 0.0, 0.0],
-      currentRotation:      0.0,
+      currentRotation:     - Math.PI / 2,
       currentRotationAxis:  [0.0, 1.0, 0.0],
       rotationSpeed:        0.0005,
       scale:                1.0
@@ -77,9 +74,9 @@
 
   var material = {
     diffuse:    [0.8, 0.8, 0.8, 1.0],
-    specular:   [0.1, 0.1, 0.1],
-    glossiness: 64.0,
-    color:      [1.0, 0.0, 0.0, 1.0]
+    specular:   [0.05, 0.05, 0.05],
+    glossiness: 128.0,
+    color:      [0.7, 0.7, 0.7, 0.7]
   };
 
   var textures = {
@@ -156,8 +153,6 @@
     shaderProgram.useLightingUniformLoc = gl.getUniformLocation(shaderProgram, "uUseLighting");
     shaderProgram.useDiffuseTextureUniformLoc = gl.getUniformLocation(shaderProgram, "uUseDiffuseTexture");
     shaderProgram.useNormalMapUniformLoc = gl.getUniformLocation(shaderProgram, "uUseNormalMap");
-    shaderProgram.showWireFrameUniformLoc = gl.getUniformLocation(shaderProgram, "uShowWireframee");
-    shaderProgram.showGridUniformLoc = gl.getUniformLocation(shaderProgram, "uShowGrid");
 
     shaderProgram.diffuseSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuseSampler");
     shaderProgram.normalSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalSampler");
@@ -299,8 +294,10 @@
       fps.nbrOfFramesForFPS = 0;
       fps.previousTime = fps.currentTime;
     }
+    console.log(canvas.width);
+    console.log(canvas.height);
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // TODO shouldn't check the model constantly till its loaded
@@ -347,8 +344,6 @@
     gl.uniform1i(shaderProgram.useLightingUniformLoc, control.useLighting);
     gl.uniform1i(shaderProgram.useDiffuseTextureUniformLoc, control.useDiffuseTexture);
     gl.uniform1i(shaderProgram.useNormalMapUniformLoc, control.useNormalMap);
-    gl.uniform1i(shaderProgram.showWireFrameUniformLoc, control.showWireframe);
-    gl.uniform1i(shaderProgram.showGridUniformLoc, control.showGrid);
 
     if (textures.diffuse !== undefined) {
       gl.activeTexture(gl.TEXTURE0);
@@ -364,8 +359,8 @@
 
     gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
     gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
-    //gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.07, 0.07, 0.07);
-    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.3, 0.3, 0.3);
+    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.08, 0.08, 0.08);
+    //gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.3, 0.3, 0.3);
 
     gl.uniform4fv(shaderProgram.diffuseUniformLoc, material.diffuse);
     gl.uniform3fv(shaderProgram.specularUniformLoc, material.specular);
@@ -425,6 +420,9 @@
 
   function start() {
     canvas = document.getElementById("gl-canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     fpsCounter = document.getElementById("fps-counter");
     // canvas = WebGLDebugUtils.makeLostContextSimulatingCanvas(canvas);
 
@@ -444,11 +442,22 @@
   }
 
 </script>
+<style>
+  * { margin: 0; padding: 0;}
+
+  body, html { height:100%; }
+
+  #gl-canvas {
+      position:absolute;
+      width:100%;
+      height:100%;
+  }
+</style>
 
 </head>
 
 <body onload="start();">
-  <canvas id="gl-canvas" width="1600" height="1000"></canvas>
+  <canvas id="gl-canvas"></canvas>
   <h2 id="fps-counter">--</h1>
 </body>
 

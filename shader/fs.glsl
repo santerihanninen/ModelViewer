@@ -3,8 +3,6 @@
   uniform bool uUseLighting;
   uniform bool uUseDiffuseTexture;
   uniform bool uUseNormalMap;
-  uniform bool uShowWireframe;
-  uniform bool uShowGrid;
 
   uniform mat4 uModelViewMatrix;
   // uniform mat4 uProjectionMatrix;
