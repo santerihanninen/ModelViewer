@@ -77,8 +77,8 @@
 
   var material = {
     diffuse:    [0.8, 0.8, 0.8, 1.0],
-    specular:   [0.8, 0.8, 0.8],
-    glossiness: 50.0,
+    specular:   [0.1, 0.1, 0.1],
+    glossiness: 64.0,
     color:      [1.0, 0.0, 0.0, 1.0]
   };
 
@@ -131,7 +131,6 @@
   function setupShaders(vertexShaderUrl, fragmentShaderUrl) {
     var vertexShaderSource = loadShaderSourceFromUrl(vertexShaderUrl);
     var fragmentShaderSource = loadShaderSourceFromUrl(fragmentShaderUrl);
-
     var vertexShader = createShaderFromSource(gl.VERTEX_SHADER, vertexShaderSource);
     var fragmentShader = createShaderFromSource(gl.FRAGMENT_SHADER, fragmentShaderSource);
     shaderProgram = gl.createProgram();
@@ -145,37 +144,36 @@
 
     gl.useProgram(shaderProgram);
 
-    // vertex shader attributes
     shaderProgram.positionAttributeLoc = gl.getAttribLocation(shaderProgram, "aPosition");
     gl.enableVertexAttribArray(shaderProgram.positionAttributeLoc);
     shaderProgram.normalAttributeLoc = gl.getAttribLocation(shaderProgram, "aNormal");
     gl.enableVertexAttribArray(shaderProgram.normalAttributeLoc);
-    shaderProgram.textureCoordinatesAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
-    gl.enableVertexAttribArray(shaderProgram.textureCoordinatesAttributeLoc);
     shaderProgram.colorAttributeLoc = gl.getAttribLocation(shaderProgram, "aColor");
     gl.disableVertexAttribArray(shaderProgram.colorAttributeLoc);
+    shaderProgram.textureCoordinatesAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
+    gl.enableVertexAttribArray(shaderProgram.textureCoordinatesAttributeLoc);
 
-    // vertex shader uniforms
-    shaderProgram.modelViewMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
-    shaderProgram.projectionMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
-    shaderProgram.normalMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
-
-    // fragment shader uniforms
-    shaderProgram.diffuseUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuse");
-    shaderProgram.specularUniformLoc = gl.getUniformLocation(shaderProgram, "uSpecular");
-    shaderProgram.glossinessUniformLoc = gl.getUniformLocation(shaderProgram, "uGlossiness");
-    shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
-    shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
-    shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
-    shaderProgram.samplerUniformLoc = gl.getUniformLocation(shaderProgram, "uSampler");
-
-
-    // fragment shader control uniforms
     shaderProgram.useLightingUniformLoc = gl.getUniformLocation(shaderProgram, "uUseLighting");
     shaderProgram.useDiffuseTextureUniformLoc = gl.getUniformLocation(shaderProgram, "uUseDiffuseTexture");
     shaderProgram.useNormalMapUniformLoc = gl.getUniformLocation(shaderProgram, "uUseNormalMap");
     shaderProgram.showWireFrameUniformLoc = gl.getUniformLocation(shaderProgram, "uShowWireframee");
     shaderProgram.showGridUniformLoc = gl.getUniformLocation(shaderProgram, "uShowGrid");
+
+    shaderProgram.diffuseSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuseSampler");
+    shaderProgram.normalSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalSampler");
+
+    shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
+    shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
+    shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
+
+    shaderProgram.diffuseUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuse");
+    shaderProgram.specularUniformLoc = gl.getUniformLocation(shaderProgram, "uSpecular");
+    shaderProgram.glossinessUniformLoc = gl.getUniformLocation(shaderProgram, "uGlossiness");
+
+    shaderProgram.modelViewMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+    shaderProgram.projectionMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
+    shaderProgram.normalMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
+
   }
 
   function getFileExtensionFromUrl(url) {
@@ -229,8 +227,8 @@
     if (modelFileName === headUrl) {
       textures.diffuse = gl.createTexture();
       loadImageForTexture(textures.diffuseUrl, textures.diffuse);
-      //var normal = gl.createTexture();
-      //loadImageForTexture(textures.normalUrl, normal);
+      textures.normal = gl.createTexture();
+      loadImageForTexture(textures.normalUrl, textures.normal);
     }
   }
 
@@ -340,31 +338,38 @@
     gl.vertexAttribPointer(shaderProgram.normalAttributeLoc,
                            vars.normalBufferItemSize, gl.FLOAT, false, 0, 0);
 
+    gl.vertexAttrib4fv(shaderProgram.colorAttributeLoc, material.color);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinatesBuffer);
     gl.vertexAttribPointer(shaderProgram.textureCoordinatesAttributeLoc,
                            vars.textureCoordinatesBufferItemSize, gl.FLOAT, false, 0, 0);
 
-    gl.vertexAttrib4fv(shaderProgram.colorAttributeLoc, material.color);
-
-    //gl.uniform4f(shaderProgram.diffuseUniformLoc, 1.0, 0.2, 0.2, 1.0);
-    gl.uniform4fv(shaderProgram.diffuseUniformLoc, material.diffuse);
-    gl.uniform3fv(shaderProgram.specularUniformLoc, material.specular);
-    gl.uniform1f(shaderProgram.glossinessUniformLoc, material.glossiness);
-    gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
-    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.8, 0.8, 0.8);
-
     gl.uniform1i(shaderProgram.useLightingUniformLoc, control.useLighting);
-    gl.uniform1i(shaderProgram.useDiffuseTextureUniformLoc, control.useLighting);
-    gl.uniform1i(shaderProgram.useNormalMapUniformLoc, control.useLighting);
-    gl.uniform1i(shaderProgram.showWireFrameUniformLoc, control.useLighting);
-    gl.uniform1i(shaderProgram.showGridUniformLoc, control.useLighting);
+    gl.uniform1i(shaderProgram.useDiffuseTextureUniformLoc, control.useDiffuseTexture);
+    gl.uniform1i(shaderProgram.useNormalMapUniformLoc, control.useNormalMap);
+    gl.uniform1i(shaderProgram.showWireFrameUniformLoc, control.showWireframe);
+    gl.uniform1i(shaderProgram.showGridUniformLoc, control.showGrid);
 
     if (textures.diffuse !== undefined) {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, textures.diffuse);
-      gl.uniform1i(shaderProgram.samplerUniformLoc, 0);
+      gl.uniform1i(shaderProgram.diffuseSamplerUniformLoc, 0);
     }
+
+    if (textures.normal !== undefined) {
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, textures.normal);
+      gl.uniform1i(shaderProgram.normalSamplerUniformLoc, 1);
+    }
+
+    gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
+    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
+    //gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.07, 0.07, 0.07);
+    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.3, 0.3, 0.3);
+
+    gl.uniform4fv(shaderProgram.diffuseUniformLoc, material.diffuse);
+    gl.uniform3fv(shaderProgram.specularUniformLoc, material.specular);
+    gl.uniform1f(shaderProgram.glossinessUniformLoc, material.glossiness);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
@@ -374,8 +379,6 @@
 
     popModelViewMatrix();
 
-    // When a frame is completed, update the number of drawn
-    // frames to be able to calculate the FPS value
     fps.nbrOfFramesForFPS++;
   }
 

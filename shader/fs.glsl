@@ -1,27 +1,19 @@
   precision mediump float;
 
-  // control
-
   uniform bool uUseLighting;
   uniform bool uUseDiffuseTexture;
   uniform bool uUseNormalMap;
   uniform bool uShowWireframe;
   uniform bool uShowGrid;
 
-  varying vec4 vPosition;
-  varying vec3 vTransformedNormal;
-  varying vec2 vTextureCoordinates;
-  varying vec4 vColor;
+  uniform mat4 uModelViewMatrix;
+  // uniform mat4 uProjectionMatrix;
+  uniform mat3 uNormalMatrix;
 
-  uniform vec4 uDiffuse;
-  uniform vec3 uSpecular;
-  uniform float uGlossiness;
-
-  // uniform sampler2D uDiffuseSampler;
-  // uniform sampler2D uNormalSampler;
+  uniform sampler2D uDiffuseSampler;
+  uniform sampler2D uNormalSampler;
 
   // uniform int uNumberOfLights;
-
   // uniform vec3 uAmbientLighting;
   // uniform int uNumberOfDirectionalLights;
   // uniform int uNumberOfPointLights;
@@ -32,13 +24,36 @@
   // uniform vec3 uPointLightDiffuse;
   // uniform vec3 uPointLightSpecular;
 
-  uniform sampler2D uSampler;
+  uniform vec4 uDiffuse;
+  uniform vec3 uSpecular;
+  uniform float uGlossiness;
+
+  varying vec4 vPosition;
+  varying vec3 vNormal;
+  varying vec3 vTangent;
+  varying vec2 vTextureCoordinates;
+  varying vec4 vColor;
+
 
   void main() {
-    vec4 diffuseColor = uDiffuse * vColor;
+
+    vec4 diffuseColor;
+
+    if (uUseDiffuseTexture) {
+      diffuseColor = texture2D(uDiffuseSampler, vTextureCoordinates);
+    } else {
+      diffuseColor = uDiffuse * vColor;
+    }
 
     // normal vector
-    vec3 n = normalize(vTransformedNormal);
+    vec3 n;
+
+    if (uUseNormalMap) {
+      vec3 normalFromTexture = texture2D(uNormalSampler, vTextureCoordinates).xyz * 2.0 - 1.0;
+      n = normalize(uNormalMatrix * normalFromTexture);
+    } else {
+      n = normalize(vNormal);
+    }
 
     // to-viewer vector
     vec3 v = -normalize(vPosition.xyz);
@@ -53,6 +68,7 @@
     vec3 diffuse = diffuseColor.rgb * max(dot(n, l), 0.0);
     vec3 specular = uDirectionalLightSpecularColor * pow(max(dot(h, n), 0.0), uGlossiness);
 
-    // gl_FragColor = vec4(uDirectionalLightIntensity * (diffuse + specular), 1);
-    gl_FragColor = texture2D(uSampler, vec2(vTextureCoordinates.s, vTextureCoordinates.t));
+    vec3 lightIntensity = uDirectionalLightIntensity;
+
+    gl_FragColor = vec4(lightIntensity * (diffuse + specular), 1);
   }
