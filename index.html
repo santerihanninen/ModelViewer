@@ -68,7 +68,7 @@
       initialRotationAxis:  [1.0, 0.0, 0.0],
       currentRotation:     - Math.PI / 2,
       currentRotationAxis:  [0.0, 1.0, 0.0],
-      rotationSpeed:        0.0005,
+      rotationSpeed:        0.0003,
       scale:                1.0
   };
 
@@ -294,8 +294,6 @@
       fps.nbrOfFramesForFPS = 0;
       fps.previousTime = fps.currentTime;
     }
-    console.log(canvas.width);
-    console.log(canvas.height);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -429,8 +427,8 @@
     // canvas.addEventListener("webglcontextlost", handleContextLost, false);
     // canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
 
-    // gl = twgl.getWebGLContext(canvas);
-    gl = WebGLDebugUtils.makeDebugContext(twgl.getWebGLContext(canvas));
+    gl = twgl.getWebGLContext(canvas);
+    //gl = WebGLDebugUtils.makeDebugContext(twgl.getWebGLContext(canvas));
     init();
 
     // Uncomment the three lines of code below to be able to test lost context
