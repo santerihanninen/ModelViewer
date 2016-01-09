@@ -12,126 +12,117 @@
 <script type="text/javascript" src="js/webgl-obj-loader.js"></script>
 
 <script type="text/javascript">
-
   var gl;
 
   var canvas;
 
-  var shaderProgram;
-
-  var buffers = {
-    positions: undefined,
-    positionsItemSize: 3,
-    positionsNumberOfItems: undefined,
-
-    normals: undefined,
-    normalsItemSize: 3,
-    normalsNumberOfItems: undefined,
-
-    textureCoordinates: undefined,
-    textureCoordinatesItemSize: 2,
-    textureCoordinatesNumberOfItems: undefined,
-
-    indices: undefined,
-    indicesItemSize: 1,
-    indicesNumberOfItems: undefined
-  };
-
   var control = {
-    useLighting:       true,
-    useDiffuseTexture: true,
-    useNormalMap:      true,
+    useLighting:                      true,
+    useDiffuseTexture:                true,
+    useNormalMap:                     true,
   };
 
-  var modelViewMatrix = mat4.create();
-  var projectionMatrix = mat4.create();
-  var modelViewMatrixStack = [];
+  var requestAnimationFrameId;
+
+  var ongoingImageLoads = [];
 
   var startTime;
   var lastTime;
   var currentTime;
 
-  var requestId;
-
-  var ongoingImageLoads = [];
-
+  var fpsCounter;
   var fps = {
-    currentTime: undefined,
-    previousTime: Date.now(),
-    nbrOfFramesForFPS: 0,
-    //counter: undefined
+    currentTime:                      undefined,
+    previousTime:                     Date.now(),
+    nbrOfFramesForFPS:                0,
+    counter:                          undefined
   };
 
-  var fpsCounter;
+  var shaderProgram;
+  var vertexShaderUrl =               "shader/vs.glsl";
+  var fragmentShaderUrl =             "shader/fs.glsl";
 
-  var vertexShaderUrl = "shader/vs.glsl";
-  var fragmentShaderUrl = "shader/fs.glsl";
+  var modelViewMatrix =               mat4.create();
+  var projectionMatrix =              mat4.create();
+  var modelViewMatrixStack =          [];
 
-  var headUrl = "head/head.obj";
-  var teapotUrl = "teapot.json";
-  var modelFileName;
-  modelFileName = teapotUrl;
-  modelFileName = headUrl;
+  var buffers = {
+    positions:                        undefined,
+    positionsItemSize:                3,
+    positionsNumberOfItems:           undefined,
 
-  var modelUrl = "models/" + modelFileName;
+    normals:                          undefined,
+    normalsItemSize:                  3,
+    normalsNumberOfItems:             undefined,
+
+    textureCoordinates:               undefined,
+    textureCoordinatesItemSize:       2,
+    textureCoordinatesNumberOfItems:  undefined,
+
+    indices:                          undefined,
+    indicesItemSize:                  1,
+    indicesNumberOfItems:             undefined
+  };
+
+  var directionalLight = {
+    intensity: [1.0, 1.0, 1.0],
+    direction: [1.0, 1.0, 1.0],
+    specularColor: [0.08, 0.08, 0.08]
+  };
 
   var model = {
-      translation:          [0.0, 0.0, 0.07],
-      initialRotation:      Math.PI / 2,
-      initialRotationAxis:  [1.0, 0.0, 0.0],
-      currentRotation:     - Math.PI / 2,
-      currentRotationAxis:  [0.0, 1.0, 0.0],
-      rotationSpeed:        0.0003,
-      scale:                1.0
+      url:                            "models/head/head.obj",
+      translation:                    [0.0, 0.0, 0.07],
+      initialRotation:                Math.PI / 2,
+      initialRotationAxis:            [1.0, 0.0, 0.0],
+      currentRotation:                - Math.PI / 2,
+      currentRotationAxis:            [0.0, 1.0, 0.0],
+      rotationSpeed:                  0.0003,
+      scale:                          1.0
   };
 
   var material = {
-    diffuse:    [0.8, 0.8, 0.8, 1.0],
-    specular:   [0.05, 0.05, 0.05],
-    glossiness: 128.0,
-    color:      [0.7, 0.7, 0.7, 0.7]
+    diffuse:                          [0.8, 0.8, 0.8, 1.0],
+    specular:                         [0.05, 0.05, 0.05],
+    glossiness:                       128.0,
+    color:                            [0.7, 0.7, 0.7, 0.7]
   };
 
   var textures = {
-    diffuseUrl: "models/head/lambertian.png",
-    diffuse: undefined,
-    normalUrl: "models/head/normal.png",
-    normal: undefined
+    diffuseUrl:                       "models/head/lambertian.png",
+    diffuse:                          undefined,
+    normalUrl:                        "models/head/normal.png",
+    normal:                           undefined
   };
 
   var camera = {
-      position: [0, -0.3, 0.0],
-      aim:      [0.0, 0.0, 0.0],
-      up:       [0.0, 0.0, 1.0],
-      fov:      45.0,
-      near:     0.1,
-      far:      100.0
+      position:                       [0, -0.3, 0.0],
+      aim:                            [0.0, 0.0, 0.0],
+      up:                             [0.0, 0.0, 1.0],
+      fov:                            45.0,
+      near:                           0.1,
+      far:                            100.0
   };
 
   function loadShaderSourceFromUrl(url) {
     var source;
-
     var getSourceSynch = function(url) {
       var req = new XMLHttpRequest();
       req.open("GET", url, false);
       req.send(null);
       // req.status == 0 when testing locally, otherwise 200
-      //return (req.status == 200) ? req.responseText : null;
+      // return (req.status == 200) ? req.responseText : null;
       return (req.status === 0) ? req.responseText : null;
     };
-
     source = getSourceSynch(url);
     return source;
   }
 
   function createShaderFromSource(type, source) {
     var shader = gl.createShader(type);
-
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-
-    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (!compiled) {
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       alert(gl.getShaderInfoLog(shader));
       return null;
     }
@@ -154,34 +145,29 @@
 
     gl.useProgram(shaderProgram);
 
-    shaderProgram.positionAttributeLoc = gl.getAttribLocation(shaderProgram, "aPosition");
+    shaderProgram.positionAttributeLoc =                    gl.getAttribLocation(shaderProgram, "aPosition");
     gl.enableVertexAttribArray(shaderProgram.positionAttributeLoc);
-    shaderProgram.normalAttributeLoc = gl.getAttribLocation(shaderProgram, "aNormal");
+    shaderProgram.normalAttributeLoc =                      gl.getAttribLocation(shaderProgram, "aNormal");
     gl.enableVertexAttribArray(shaderProgram.normalAttributeLoc);
-    shaderProgram.colorAttributeLoc = gl.getAttribLocation(shaderProgram, "aColor");
+    shaderProgram.colorAttributeLoc =                       gl.getAttribLocation(shaderProgram, "aColor");
     gl.disableVertexAttribArray(shaderProgram.colorAttributeLoc);
-    shaderProgram.textureCoordinatesAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
+    shaderProgram.textureCoordinatesAttributeLoc =          gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
     gl.enableVertexAttribArray(shaderProgram.textureCoordinatesAttributeLoc);
 
-    shaderProgram.useLightingUniformLoc = gl.getUniformLocation(shaderProgram, "uUseLighting");
-    shaderProgram.useDiffuseTextureUniformLoc = gl.getUniformLocation(shaderProgram, "uUseDiffuseTexture");
-    shaderProgram.useNormalMapUniformLoc = gl.getUniformLocation(shaderProgram, "uUseNormalMap");
-
-    shaderProgram.diffuseSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuseSampler");
-    shaderProgram.normalSamplerUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalSampler");
-
-    shaderProgram.directionalLightIntensityUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
-    shaderProgram.directionalLightDirectionUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
+    shaderProgram.useLightingUniformLoc =                   gl.getUniformLocation(shaderProgram, "uUseLighting");
+    shaderProgram.useDiffuseTextureUniformLoc =             gl.getUniformLocation(shaderProgram, "uUseDiffuseTexture");
+    shaderProgram.useNormalMapUniformLoc =                  gl.getUniformLocation(shaderProgram, "uUseNormalMap");
+    shaderProgram.diffuseSamplerUniformLoc =                gl.getUniformLocation(shaderProgram, "uDiffuseSampler");
+    shaderProgram.normalSamplerUniformLoc =                 gl.getUniformLocation(shaderProgram, "uNormalSampler");
+    shaderProgram.directionalLightIntensityUniformLoc =     gl.getUniformLocation(shaderProgram, "uDirectionalLightIntensity");
+    shaderProgram.directionalLightDirectionUniformLoc =     gl.getUniformLocation(shaderProgram, "uDirectionalLightDirection");
     shaderProgram.directionalLightSpecularColorUniformLoc = gl.getUniformLocation(shaderProgram, "uDirectionalLightSpecularColor");
-
-    shaderProgram.diffuseUniformLoc = gl.getUniformLocation(shaderProgram, "uDiffuse");
-    shaderProgram.specularUniformLoc = gl.getUniformLocation(shaderProgram, "uSpecular");
-    shaderProgram.glossinessUniformLoc = gl.getUniformLocation(shaderProgram, "uGlossiness");
-
-    shaderProgram.modelViewMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
-    shaderProgram.projectionMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
-    shaderProgram.normalMatrixUniformLoc = gl.getUniformLocation(shaderProgram, "uNormalMatrix");
-
+    shaderProgram.diffuseUniformLoc =                       gl.getUniformLocation(shaderProgram, "uDiffuse");
+    shaderProgram.specularUniformLoc =                      gl.getUniformLocation(shaderProgram, "uSpecular");
+    shaderProgram.glossinessUniformLoc =                    gl.getUniformLocation(shaderProgram, "uGlossiness");
+    shaderProgram.modelViewMatrixUniformLoc =               gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+    shaderProgram.projectionMatrixUniformLoc =              gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
+    shaderProgram.normalMatrixUniformLoc =                  gl.getUniformLocation(shaderProgram, "uNormalMatrix");
   }
 
   function getFileExtensionFromUrl(url) {
@@ -196,12 +182,12 @@
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
           switch (type) {
-            case "json":
-              setupBuffers(JSON.parse(request.responseText));
-              break;
             case "obj":
               // FIXME added "return this" to OBJ.Mesh(), but it shouldn't be needed
               setupBuffers(OBJ.Mesh(request.responseText));
+              break;
+            case "json":
+              setupBuffers(JSON.parse(request.responseText));
               break;
           }
         }
@@ -209,35 +195,31 @@
     request.send();
   }
 
+  // TODO switch filtering to use mipmapping
   function textureFinishedLoading(image, texture) {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.bindTexture(gl.TEXTURE_2D, texture);
-
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   function loadImageForTexture(url, texture) {
     var image = new Image();
     image.onload = function() {
-      // ongoingImageLoads.splice(ongoingImageLoads.indexOf(image), 1);
+      ongoingImageLoads.splice(ongoingImageLoads.indexOf(image), 1);
       textureFinishedLoading(image, texture);
     }
-    //ongoingImageLoads.push(image);
+    ongoingImageLoads.push(image);
     image.src = url;
   }
 
   function setupTextures() {
-    if (modelFileName === headUrl) {
-      textures.diffuse = gl.createTexture();
-      loadImageForTexture(textures.diffuseUrl, textures.diffuse);
-      textures.normal = gl.createTexture();
-      loadImageForTexture(textures.normalUrl, textures.normal);
-    }
+    textures.diffuse = gl.createTexture();
+    loadImageForTexture(textures.diffuseUrl, textures.diffuse);
+    textures.normal = gl.createTexture();
+    loadImageForTexture(textures.normalUrl, textures.normal);
   }
 
   function setupBuffers(model) {
@@ -262,10 +244,6 @@
     buffers.indicesNumberOfItems = model.indices.length;
   }
 
-  function degToRad(degrees) {
-    return degrees * Math.PI / 180;
-  }
-
   function pushModelViewMatrix() {
     var copy = mat4.clone(modelViewMatrix);
     modelViewMatrixStack.push(copy);
@@ -280,16 +258,10 @@
 
   function uploadMatrixUniformsToShader() {
     gl.uniformMatrix4fv(shaderProgram.modelViewMatrixUniformLoc, false, modelViewMatrix);
-
     gl.uniformMatrix4fv(shaderProgram.projectionMatrixUniformLoc, false, projectionMatrix);
-
     var normalMatrix = mat3.create();
     mat3.normalFromMat4(normalMatrix, modelViewMatrix);
     gl.uniformMatrix3fv(shaderProgram.normalMatrixUniformLoc, false, normalMatrix);
-  }
-
-  function updateFPS(fps) {
-    fpsCounter.textContent=fps;
   }
 
   function draw() {
@@ -299,7 +271,7 @@
     // Update FPS if a second or more has passed since last FPS update
     if(fps.currentTime - fps.previousTime >= 1000) {
       // fps.counter.innerHTML = fps.nbrOfFramesForFPS;
-      updateFPS(fps.nbrOfFramesForFPS);
+      fpsCounter.textContent = fps.nbrOfFramesForFPS;
       fps.nbrOfFramesForFPS = 0;
       fps.previousTime = fps.currentTime;
     }
@@ -320,10 +292,6 @@
     mat4.identity(modelViewMatrix);
 
     mat4.lookAt(modelViewMatrix, camera.position, camera.aim, camera.up);
-
-    // FIXME directional light has some direction problems
-    var d = vec3.fromValues(10.0, 3.0, 17.0);
-    vec3.normalize(d, d);
 
     pushModelViewMatrix();
 
@@ -364,10 +332,11 @@
       gl.uniform1i(shaderProgram.normalSamplerUniformLoc, 1);
     }
 
-    gl.uniform3f(shaderProgram.directionalLightIntensityUniformLoc, 1.0, 1.0, 1.0);
-    gl.uniform3f(shaderProgram.directionalLightDirectionUniformLoc, d[0], d[1], d[2]);
-    gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.08, 0.08, 0.08);
-    //gl.uniform3f(shaderProgram.directionalLightSpecularColorUniformLoc, 0.3, 0.3, 0.3);
+    gl.uniform3fv(shaderProgram.directionalLightIntensityUniformLoc, directionalLight.intensity);
+    // FIXME directional light's direction is hard coded in the shader
+    // normalize the light direction vector before passing to vertex shader
+    gl.uniform3fv(shaderProgram.directionalLightDirectionUniformLoc, directionalLight.direction);
+    gl.uniform3fv(shaderProgram.directionalLightSpecularColorUniformLoc, directionalLight.specularColor);
 
     gl.uniform4fv(shaderProgram.diffuseUniformLoc, material.diffuse);
     gl.uniform3fv(shaderProgram.specularUniformLoc, material.specular);
@@ -384,6 +353,10 @@
     fps.nbrOfFramesForFPS++;
   }
 
+  function initAnimation() {
+
+  }
+
   function animate() {
     currentTime = Date.now();
     if (startTime === undefined) {
@@ -397,14 +370,14 @@
   }
 
   function tick() {
-    requestId = requestAnimationFrame(tick);
+    requestAnimationFrameId = requestAnimationFrame(tick);
     draw();
     animate();
   }
 
   function handleContextLost(event) {
     event.preventDefault();
-    cancelRequestAnimationFrame(requestId);
+    cancelRequestAnimationFrame(requestAnimationFrameId);
 
     for (var i = 0; ongoingImageLoads.length; i++) {
       ongoingImageLoads[i].onload = undefined;
@@ -414,13 +387,13 @@
 
   function handleContextRestored(event) {
     init();
-    requestId = requestAnimationFrame(draw, canvas);
+    requestAnimationFrameId = requestAnimationFrame(draw, canvas);
   }
 
   function init() {
     setupShaders(vertexShaderUrl, fragmentShaderUrl);
     setupTextures();
-    loadModel(modelUrl);
+    loadModel(model.url);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
   }
@@ -437,7 +410,8 @@
     // canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
 
     gl = twgl.getWebGLContext(canvas);
-    //gl = WebGLDebugUtils.makeDebugContext(twgl.getWebGLContext(canvas));
+    // gl = WebGLDebugUtils.makeDebugContext(twgl.getWebGLContext(canvas));
+
     init();
 
     // Uncomment the three lines of code below to be able to test lost context
@@ -447,7 +421,6 @@
 
     tick();
   }
-
 </script>
 <style>
   * { margin: 0; padding: 0;}
@@ -460,12 +433,9 @@
       height:100%;
   }
 </style>
-
 </head>
-
 <body onload="start();">
   <canvas id="gl-canvas"></canvas>
   <h2 id="fps-counter">--</h1>
 </body>
-
 </html>
