@@ -112,7 +112,7 @@
       req.send(null);
       // req.status == 0 when testing locally, otherwise 200
       // return (req.status == 200) ? req.responseText : null;
-      return (req.status === 0) ? req.responseText : null;
+      return (req.status === 200) ? req.responseText : null;
     };
     source = getSourceSynch(url);
     return source;
@@ -178,6 +178,7 @@
   function loadModel(url) {
     var type = getFileExtensionFromUrl(url);
     var request = new XMLHttpRequest();
+    // TODO add the third parameter
     request.open("GET", url);
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
