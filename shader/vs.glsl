@@ -16,7 +16,6 @@ varying vec2 vTextureCoordinates;
 varying vec4 vColor;
 
 void main() {
-
   vPosition = uModelViewMatrix * vec4(aPosition, 1.0);
   vNormal = normalize(uNormalMatrix * aNormal);
   vTangent = vec3(1.0, 0.0, 0.0) - aNormal.x * aNormal;
